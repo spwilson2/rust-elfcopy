@@ -1,0 +1,59 @@
+[root]
+name = "elfdump"
+version = "0.1.0"
+dependencies = [
+ "libc 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memmap 0.4.0 (git+https://github.com/danburkert/memmap-rs)",
+ "rust-elf32 0.1.0 (git+https://github.com/spwilson2/rust-elf32)",
+]
+
+[[package]]
+name = "fs2"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "kernel32-sys"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "memmap"
+version = "0.4.0"
+source = "git+https://github.com/danburkert/memmap-rs#17bed5202b588a45b263a61ea091d6fc459e2cab"
+dependencies = [
+ "fs2 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "rust-elf32"
+version = "0.1.0"
+source = "git+https://github.com/spwilson2/rust-elf32#a358cad9bc3108b60ba305e76971f2894489c0de"
+
+[[package]]
+name = "winapi"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "winapi-build"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+

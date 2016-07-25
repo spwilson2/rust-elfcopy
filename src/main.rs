@@ -43,13 +43,11 @@ fn read_elf_header(ptr:usize){
     unsafe{println!("{:?}", *ptr)};
 }
 
-fn read_all_sections(ptr:usize) {
+fn read_all_sections(head_wrapper: &elf::ElfHeadWrapper) {
     unsafe {
-    let mut header = &mut *(ptr as *mut ElfHeader);//ElfHeader::get_header(ptr as *mut ElfHeader);
-    println!("{:?}", header as *mut ElfHeader);
-    println!("{:?}", header);
+    println!("{:?}", head_wrapper.header);
 
-    for entry in (*header).get_sections_headers() {
+    for entry in head_wrapper.get_sections_headers() {
         println!("{:?}", entry);
     }
     }
@@ -71,6 +69,15 @@ fn map_file(path: &String, write: bool) -> (usize, Mmap) {
     return (ptr as usize, mmap) // Need to keep the mmap so it doesn't get unmapped.
 }
 
+fn get_size_of_metadata(head_wrapper: &elf::ElfHeadWrapper) -> usize {
+    unsafe {
+    let mut total_size = mem::size_of::<elf::ElfHeader>();
+
+    total_size += mem::size_of::<elf::SectionHeader>() * head_wrapper.get_sections_headers().len();
+    total_size
+    }
+}
+
 
 //fn read_elf_section_header() -> {
 //}
@@ -85,6 +92,8 @@ use std::fs::OpenOptions;
 use std::io::{self, Write, Seek};
 use std::fs::File;
 use std::env;
+use std::mem;
+use rust_elf32::elf;
 
 static usage: &'static str = "usage: {arg0} <in_elf_file> <out_bin_file>";
 
@@ -110,9 +119,23 @@ fn main() {
     
     let (mut elf_ptr, mut inmmap) = map_file(&inpath, false);
 
-    read_all_sections(elf_ptr);
-    
-    unsafe{assert!((&mut*(elf_ptr as *mut ElfHeader)).test_valid())}
+
+    unsafe {
+
+        let mut elf_header = elf::ElfHeadWrapper::new(&mut*(elf_ptr as *mut ElfHeader));
+
+        read_all_sections(&elf_header);
+        
+        assert!(elf_header.test_valid());
+
+        let section_headers = elf_header.get_sections_headers();
+
+        elf_header.get_str_table(section_headers);
+
+    }
+
+
+    // Get the size of the elf info
 
     //   let src = "Hello!";
     //   let src_data = src.as_bytes();

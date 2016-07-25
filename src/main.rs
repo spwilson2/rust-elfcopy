@@ -74,6 +74,7 @@ fn get_size_of_metadata(head_wrapper: &elf::ElfHeadWrapper) -> usize {
     let mut total_size = mem::size_of::<elf::ElfHeader>();
 
     total_size += mem::size_of::<elf::SectionHeader>() * head_wrapper.get_sections_headers().len();
+    total_size += head_wrapper.get_section(elf::Section::STRTAB).size() as usize;
     total_size
     }
 }
@@ -120,7 +121,7 @@ fn main() {
     let (mut elf_ptr, mut inmmap) = map_file(&inpath, false);
 
 
-    unsafe {
+    let metadata_size = unsafe {
 
         let mut elf_header = elf::ElfHeadWrapper::new(&mut*(elf_ptr as *mut ElfHeader));
 
@@ -132,14 +133,26 @@ fn main() {
 
         elf_header.get_str_table(section_headers);
 
-    }
+        // Get the size of the elf info
+        get_size_of_metadata(&elf_header)
 
+    };
 
-    // Get the size of the elf info
+    let mut outfile = OpenOptions::new()
+                            .read(true)
+                            .write(true)
+                            .open(&outpath)
+                            .unwrap();
+    
+    // Allocate space for metadata in the file first
+    outfile.seek(io::SeekFrom::End(metadata_size as i64)).unwrap();
 
-    //   let src = "Hello!";
-    //   let src_data = src.as_bytes();
+    //TODO: Check the end of the file for a magic number so we don't rewrite.
+    
+    outfile.write(&[0]).unwrap();
+    let mut mmap = memmap::Mmap::open(&outfile, memmap::Protection::ReadWrite).unwrap();
 
+    //TODO: Tag the end of the file with a magic number so we don't rewrite.
 
     //   unsafe {
     //       ptr::copy(src_data.as_ptr(), &mut *(ptr as *mut _), src_data.len());

@@ -45,7 +45,7 @@ dependencies = [
 [[package]]
 name = "rust-elf32"
 version = "0.1.0"
-source = "git+https://github.com/spwilson2/rust-elf32#6352cfbbdc2c4540769d4226793c618125e51163"
+source = "git+https://github.com/spwilson2/rust-elf32#b62e3fb20d7da9e1fbd8c25eb5c010d49ae450af"
 
 [[package]]
 name = "winapi"

@@ -1,42 +1,7 @@
 extern crate rust_elf32;
-//extern crate libc;
-//extern crate memmap;
-
-//use std::io::{self, Read, Write, Error, Seek};
-//use std::fs::File;
-
-//fn main() {
-//    match write_file() {
-//        Ok(_) => {},
-//        Err(e) => panic!("{}", e),
-//    }
-//}
-//
-//fn write_file() -> Result<(),std::io::Error> {
-//    let mut userin = String::new();
-//
-//    io::stdout().write(b"Enter a file to dump elf of: ");
-//    io::stdout().flush();
-//
-//    io::stdin().read_line(&mut userin);
-//    let mut userin = userin.trim();
-//    io::stdout().write(userin.as_bytes());
-//
-//    let mut file = try!(OpenOptions::new()
-//                        .read(true)
-//                        //.write(true)
-//                        //.create(true)
-//                        .open(userin));
-//
-//    assert_eq!(try!(file.write(b"This is text.\n")), 14);
-//    Ok(())
-//}
-
 use rust_elf32::elf::{SectionHeader, ElfHeader};
 
-/// Map the given file names in memory
-//fn open_files(infile: &str, outfile: &str) -> Result<(Mmap,Mmap), memmap::Error> {
-//}
+const MAGIC_COPIED: u32 = 0x0DD001C0;
 
 fn read_elf_header(ptr:usize){
     let mut ptr = ptr as *mut ElfHeader;
@@ -79,6 +44,22 @@ fn get_size_of_metadata(head_wrapper: &elf::ElfHeadWrapper) -> usize {
     }
 }
 
+fn check_for_our_magic(outfile: &mut File) -> bool {
+
+    let mut array = [0;4];
+    let ref mut magic_end = array;
+
+    outfile.read(magic_end).unwrap();
+
+    unsafe{
+        let magic_be: [u8;4] = mem::transmute(MAGIC_COPIED);
+
+        assert!(magic_end != &magic_be);
+    }
+
+    false
+}
+
 
 //fn read_elf_section_header() -> {
 //}
@@ -90,7 +71,7 @@ use std::os;
 use std::ptr;
 use std::fs;
 use std::fs::OpenOptions;
-use std::io::{self, Write, Seek};
+use std::io::{self, Write, Seek, Read};
 use std::fs::File;
 use std::env;
 use std::mem;
@@ -120,6 +101,20 @@ fn main() {
     
     let (mut elf_ptr, mut inmmap) = map_file(&inpath, false);
 
+    // Check for the magic ending to see if we have already copied the 
+    // elf headers to this file.
+    let mut outfile = OpenOptions::new()
+                            .read(true)
+                            .write(true)
+                            .open(&outpath)
+                            .unwrap();
+
+    // If there is an error seeking, assume that the file is empty.
+    match outfile.seek(io::SeekFrom::End( -(mem::size_of::<u32>() as i64))) {
+        Ok(_) => {check_for_our_magic(&mut outfile);},
+        Err(e) => println!("{:?}", e)
+    }
+
 
     let metadata_size = unsafe {
 
@@ -131,35 +126,47 @@ fn main() {
 
         let section_headers = elf_header.get_sections_headers();
 
-        elf_header.get_str_table(section_headers);
+        let strtab = elf_header.get_str_table(section_headers);
+
+        for c in strtab {
+            if *c != 0 {
+                print!("{:}", *c as char);
+            }
+            else {
+                println!("");
+            }
+
+        }
 
         // Get the size of the elf info
         get_size_of_metadata(&elf_header)
-
     };
 
-    let mut outfile = OpenOptions::new()
-                            .read(true)
-                            .write(true)
-                            .open(&outpath)
-                            .unwrap();
-    
-    // Allocate space for metadata in the file first
-    outfile.seek(io::SeekFrom::End(metadata_size as i64)).unwrap();
+    // Scope the out_mmap
+    {
+        // Allocate space for metadata in the file first
+        outfile.seek(io::SeekFrom::End(metadata_size as i64)).unwrap();
 
-    //TODO: Check the end of the file for a magic number so we don't rewrite.
-    
-    outfile.write(&[0]).unwrap();
-    let mut mmap = memmap::Mmap::open(&outfile, memmap::Protection::ReadWrite).unwrap();
+        //TODO: Check the end of the file for a magic number so we don't rewrite.
+        
+        outfile.write(&[0]).unwrap();
 
-    //TODO: Tag the end of the file with a magic number so we don't rewrite.
+        let mut out_mmap = memmap::Mmap::open(&outfile, memmap::Protection::ReadWrite).unwrap();
 
-    //   unsafe {
-    //       ptr::copy(src_data.as_ptr(), &mut *(ptr as *mut _), src_data.len());
-    //   }
-    //read_elf_header(ptr as usize);
-    //let ptr = (ptr as usize + 89336) as *mut usize;
-    //let ref mut src = 1;
-    //    unsafe{ptr::copy(src, &mut *(ptr as *mut _), 1)};
-    //read_all_sections(ptr as usize);
+        let mut out_mmap_addr = out_mmap.mut_ptr() as usize;
+        assert!(out_mmap_addr != 0);
+
+        unsafe {
+            let mut elf_header = elf::ElfHeadWrapper::new(&mut*(elf_ptr as *mut ElfHeader));
+
+            elf_header.copy(out_mmap_addr);
+        }
+    }
+
+    outfile.seek(io::SeekFrom::End(0)).unwrap();
+
+    unsafe {
+        let magic: [u8; 4] = mem::transmute(MAGIC_COPIED);
+        outfile.write(&magic).unwrap();
+    }
 }

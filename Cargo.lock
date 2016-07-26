@@ -1,8 +1,7 @@
 [root]
-name = "elfdump"
-version = "0.1.0"
+name = "rust-elfcopy"
+version = "1.0.0"
 dependencies = [
- "libc 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap 0.4.0 (git+https://github.com/danburkert/memmap-rs)",
  "rust-elf32 0.1.0 (git+https://github.com/spwilson2/rust-elf32)",
 ]

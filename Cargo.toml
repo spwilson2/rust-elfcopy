@@ -1,9 +1,8 @@
 [package]
-name = "elfdump"
-version = "0.1.0"
+name = "rust-elfcopy"
+version = "1.0.0"
 authors = ["Sean Wilson <spwilson27@gmail.com>"]
 
 [dependencies]
 rust-elf32 = { git = "https://github.com/spwilson2/rust-elf32" }
-memmap = { git = "https://github.com/danburkert/memmap-rs"}
-libc = "*"
+memmap = { git = "https://github.com/danburkert/memmap-rs" }
